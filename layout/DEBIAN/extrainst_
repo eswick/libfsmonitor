@@ -1,0 +1,13 @@
+#!/bin/sh
+chown root /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+chmod 644 /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+
+if [[ $1 == upgrade ]]; then
+    launchctl unload /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+fi
+
+if [[ $1 == install || $1 == upgrade ]]; then
+    launchctl load /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+fi
+
+exit 0
