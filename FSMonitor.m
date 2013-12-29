@@ -48,20 +48,20 @@
 
 	if([self typeFilterAllowsEventType:type]){
 		[delegateEventInfo removeObjectForKey:@"FILE"];
-		if([NSURL URLWithString:[eventInfo objectForKey:@"FILE"]])
-			[delegateEventInfo setObject:[NSURL URLWithString:[eventInfo objectForKey:@"FILE"]] forKey:@"FILE"];
+		if([NSURL URLWithString:[[eventInfo objectForKey:@"FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]])
+			[delegateEventInfo setObject:[NSURL URLWithString:[[eventInfo objectForKey:@"FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"FILE"];
 		else{
-			NSLog(@"URL is nil. Path: %@ truncated?", [eventInfo objectForKey:@"FILE"]);
+			NSLog(@"URL is nil. Path: %@ truncated?", [[eventInfo objectForKey:@"FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
 			return;
 		}
 
 		if([delegateEventInfo objectForKey:@"DEST_FILE"]){
 			[delegateEventInfo removeObjectForKey:@"DEST_FILE"];
 
-			if([NSURL URLWithString:[eventInfo objectForKey:@"DEST_FILE"]])
-				[delegateEventInfo setObject:[NSURL URLWithString:[eventInfo objectForKey:@"DEST_FILE"]] forKey:@"DEST_FILE"];
+			if([NSURL URLWithString:[[eventInfo objectForKey:@"DEST_FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]])
+				[delegateEventInfo setObject:[NSURL URLWithString:[[eventInfo objectForKey:@"DEST_FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"DEST_FILE"];
 			else{
-				NSLog(@"Dest URL is nil. Path: %@ truncated?", [eventInfo objectForKey:@"DEST_FILE"]);
+				NSLog(@"Dest URL is nil. Path: %@ truncated?", [[eventInfo objectForKey:@"DEST_FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
 				return;
 			}
 		}
