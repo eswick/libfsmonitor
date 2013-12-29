@@ -106,9 +106,9 @@ int main(int argc, char **argv){
 
 	while (1) { // event processing loop
 
-			ret = read(clonefd, buffer, FSEVENT_BUFSIZ);
+		ret = read(clonefd, buffer, FSEVENT_BUFSIZ);
 
-			off = 0;
+		off = 0;
 
 		while (off < ret) { // process one or more events received
 
@@ -272,7 +272,6 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 	}
 
 	[notifier postNotificationName:@"FSMONITORD_CALLBACK" userInfo:event];
-	NSLog(@"Daemon sent callback.");
 
 	[event release];
 }
