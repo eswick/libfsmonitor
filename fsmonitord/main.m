@@ -10,11 +10,15 @@
 #include <pwd.h>
 #include <grp.h>
 
+#import "../CPDistributedNotificationCenter.h"
+
 #define DEV_FSEVENTS     "/dev/fsevents" // the fsevents pseudo-device
 #define FSEVENT_BUFSIZ   131072          // buffer for reading from the device
 #define EVENT_QUEUE_SIZE 4096            // limited by MAX_KFS_EVENTS
 
-void handleEvent(int32_t type, NSArray *arguments);
+void handleEvent(pid_t pid, int32_t type, NSArray *arguments);
+
+CPDistributedNotificationCenter *notifier;
 
 // an event argument
 typedef struct kfs_event_arg {
@@ -65,6 +69,9 @@ int main(int argc, char **argv){
 		FSE_REPORT,  // FSE_XATTR_MODIFIED,
 		FSE_REPORT,  // FSE_XATTR_REMOVED,
 	};
+
+	notifier = [CPDistributedNotificationCenter centerNamed:@"com.eswick.libfsmonitor"];
+	[notifier runServer];
 
 	if (geteuid() != 0) {
 		NSLog(@"Error: %s must be run as root.", argv[0]);
@@ -148,8 +155,6 @@ int main(int argc, char **argv){
 
 				arg_id = (kea->type > FSE_MAX_ARGS) ? 0 : kea->type;
 
-				//[arguments addObject:@(arg_id)];
-
 				switch (kea->type) { // handle based on argument type
 
 					case FSE_ARG_VNODE:  // a vnode (string) pointer
@@ -166,10 +171,7 @@ int main(int argc, char **argv){
 						break;
 
 					case FSE_ARG_RAW: // a void pointer
-						//printf("%-6s = ", "ptr");
-						//for (j = 0; j < kea->len; j++)
-						//printf("%02x ", ((char *)kea->data.ptr)[j]);
-						//printf("\n");
+						//Not implemented
 						break;
 
 					case FSE_ARG_INO: // an inode number
@@ -196,13 +198,15 @@ int main(int argc, char **argv){
 						break;
 
 					default:
+						NSLog(@"such argument. so unknown. wow.");
+						NSLog(@"(Unknown event argument)");
 						[arguments addObject:@"unknown"];
 						break;
 				}
 
 				kea = (kfs_event_arg_t *)((char *)kea + eoff); // next
 			} // for each argument
-			handleEvent(kfse->type, arguments);
+			handleEvent(kfse->pid, kfse->type, arguments);
 			[arguments release];
 		} // for each event
 	} // forever
@@ -213,10 +217,11 @@ int main(int argc, char **argv){
 }
 
 
-void handleEvent(int32_t type, NSArray *arguments){
+void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 	NSMutableDictionary *event = [NSMutableDictionary new];
 
 	[event setObject:@(type) forKey:@"TYPE"];
+	[event setObject:@(pid) forKey:@"PID"];
 
 	switch(type){
 		case FSE_CREATE_FILE:
@@ -225,7 +230,8 @@ void handleEvent(int32_t type, NSArray *arguments){
 		case FSE_CONTENT_MODIFIED:
 		case FSE_CHOWN:
 		case FSE_CREATE_DIR:
-			[event setObject:[NSURL URLWithString:[arguments objectAtIndex:0]] forKey:@"FILE"];
+		case FSE_XATTR_MODIFIED:
+			[event setObject:[arguments objectAtIndex:0] forKey:@"FILE"];
 			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MAJOR"];
 			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MINOR"];
 			[event setObject:[arguments objectAtIndex:2] forKey:@"INODE"];
@@ -235,7 +241,7 @@ void handleEvent(int32_t type, NSArray *arguments){
 
 			break;
 		case FSE_RENAME:
-			[event setObject:[NSURL URLWithString:[arguments objectAtIndex:0]] forKey:@"FILE"];
+			[event setObject:[arguments objectAtIndex:0] forKey:@"FILE"];
 			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MAJOR"];
 			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MINOR"];
 			[event setObject:[arguments objectAtIndex:2] forKey:@"INODE"];
@@ -243,7 +249,7 @@ void handleEvent(int32_t type, NSArray *arguments){
 			[event setObject:[arguments objectAtIndex:4] forKey:@"UID"];
 			[event setObject:[arguments objectAtIndex:5] forKey:@"GID"];
 
-			[event setObject:[NSURL URLWithString:[arguments objectAtIndex:0]] forKey:@"DEST_FILE"];
+			[event setObject:[arguments objectAtIndex:0] forKey:@"DEST_FILE"];
 			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEST_DEVICE_MAJOR"];
 			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEST_DEVICE_MINOR"];
 			[event setObject:[arguments objectAtIndex:2] forKey:@"DEST_INODE"];
@@ -257,15 +263,15 @@ void handleEvent(int32_t type, NSArray *arguments){
 		case FSE_FINDER_INFO_CHANGED:
 			//Not implemented
 			break;
-		case FSE_XATTR_MODIFIED:
-			//Not implemented
-			break;
 		case FSE_XATTR_REMOVED:
 			//Not implemented
 			break;
 		default:
 			break;
 	}
+	
+	NSLog(@"%@", event);
+	[notifier postNotificationName:@"EVENT" userInfo:event];
 
 	[event release];
 }
