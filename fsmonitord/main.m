@@ -225,49 +225,22 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 	[event setObject:[arguments objectAtIndex:[arguments count] - 1] forKey:@"TIMESTAMP"];
 
 	switch(type){
-		case FSE_CREATE_FILE:
-		case FSE_DELETE:
-		case FSE_STAT_CHANGED:
-		case FSE_CONTENT_MODIFIED:
-		case FSE_CHOWN:
-		case FSE_CREATE_DIR:
-		case FSE_XATTR_MODIFIED:
-			[event setObject:[arguments objectAtIndex:0] forKey:@"FILE"];
-			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MAJOR"];
-			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MINOR"];
-			[event setObject:[arguments objectAtIndex:2] forKey:@"INODE"];
-			[event setObject:[arguments objectAtIndex:3] forKey:@"MODE"];
-			[event setObject:[arguments objectAtIndex:4] forKey:@"UID"];
-			[event setObject:[arguments objectAtIndex:5] forKey:@"GID"];
-
-			break;
-		case FSE_RENAME:
-			[event setObject:[arguments objectAtIndex:0] forKey:@"FILE"];
-			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MAJOR"];
-			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MINOR"];
-			[event setObject:[arguments objectAtIndex:2] forKey:@"INODE"];
-			[event setObject:[arguments objectAtIndex:3] forKey:@"MODE"];
-			[event setObject:[arguments objectAtIndex:4] forKey:@"UID"];
-			[event setObject:[arguments objectAtIndex:5] forKey:@"GID"];
-
-			[event setObject:[arguments objectAtIndex:0] forKey:@"DEST_FILE"];
-			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEST_DEVICE_MAJOR"];
-			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEST_DEVICE_MINOR"];
-			[event setObject:[arguments objectAtIndex:2] forKey:@"DEST_INODE"];
-			[event setObject:[arguments objectAtIndex:3] forKey:@"DEST_MODE"];
-			[event setObject:[arguments objectAtIndex:4] forKey:@"DEST_UID"];
-			[event setObject:[arguments objectAtIndex:5] forKey:@"DEST_GID"];
-			break;
-		case FSE_EXCHANGE:
-			//Not implemented
-			break;
-		case FSE_FINDER_INFO_CHANGED:
-			//Not implemented
-			break;
 		case FSE_XATTR_REMOVED:
-			//Not implemented
-			break;
+		case FSE_FINDER_INFO_CHANGED:
+		case FSE_EXCHANGE:
+			NSLog(@"Event type %i not implemented with arguments: %@", type, arguments);
+			[event release];
+			return;
+		case FSE_RENAME:
+			[event setObject:[arguments objectAtIndex:6] forKey:@"DEST_FILE"];
 		default:
+			[event setObject:[arguments objectAtIndex:0] forKey:@"FILE"];
+			[event setObject:@(major([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MAJOR"];
+			[event setObject:@(minor([[arguments objectAtIndex:1] intValue])) forKey:@"DEVICE_MINOR"];
+			[event setObject:[arguments objectAtIndex:2] forKey:@"INODE"];
+			[event setObject:[arguments objectAtIndex:3] forKey:@"MODE"];
+			[event setObject:[arguments objectAtIndex:4] forKey:@"UID"];
+			[event setObject:[arguments objectAtIndex:5] forKey:@"GID"];
 			break;
 	}
 
