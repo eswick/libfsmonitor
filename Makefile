@@ -3,7 +3,8 @@ THEOS_BUILD_DIR = build
 include theos/makefiles/common.mk
 
 LIBRARY_NAME = libfsmonitor
-libfsmonitor_FILES = libfsmonitor.m
+libfsmonitor_FILES = FSMonitor.m
+libfsmonitor_PRIVATE_FRAMEWORKS = AppSupport
 
 include $(THEOS_MAKE_PATH)/library.mk
 SUBPROJECTS += fsmonitord

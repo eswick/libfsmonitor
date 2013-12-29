@@ -271,8 +271,8 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 			break;
 	}
 
-	NSLog(@"%@", event);
-	[notifier postNotificationName:@"EVENT" userInfo:event];
+	[notifier postNotificationName:@"FSMONITORD_CALLBACK" userInfo:event];
+	NSLog(@"Daemon sent callback.");
 
 	[event release];
 }
