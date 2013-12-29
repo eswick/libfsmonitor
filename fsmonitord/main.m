@@ -222,6 +222,7 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 
 	[event setObject:@(type) forKey:@"TYPE"];
 	[event setObject:@(pid) forKey:@"PID"];
+	[event setObject:[arguments objectAtIndex:[arguments count] - 1] forKey:@"TIMESTAMP"];
 
 	switch(type){
 		case FSE_CREATE_FILE:
@@ -269,7 +270,7 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 		default:
 			break;
 	}
-	
+
 	NSLog(@"%@", event);
 	[notifier postNotificationName:@"EVENT" userInfo:event];
 
