@@ -6,10 +6,10 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
-#include <sys/fsevents.h>
 #include <pwd.h>
 #include <grp.h>
 
+#import "fsevents.h"
 #import "../CPDistributedNotificationCenter.h"
 
 #define DEV_FSEVENTS     "/dev/fsevents" // the fsevents pseudo-device
