@@ -1,7 +1,9 @@
 #!/bin/sh
+chown root /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+chmod 644 /Library/LaunchDaemons/com.eswick.fsmonitord.plist
 
 if [[ $1 == remove || $1 == purge ]]; then
-    /bin/launchctl unload /Library/LaunchDaemons/com.eswick.fsmonitord.plist
+    launchctl unload /Library/LaunchDaemons/com.eswick.fsmonitord.plist
 fi
 
 exit 0
