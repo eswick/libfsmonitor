@@ -1,10 +1,9 @@
 Package: com.eswick.libfsmonitor
 Name: libfsmonitor
-Depends: 
-Version: 0.0.1
+Version: 1.0.0
 Architecture: iphoneos-arm
-Description: An awesome library of some sort!!
+Description: Open source Objective-C library for monitoring filesystem events.
 Maintainer: Evan Swick
 Author: Evan Swick
-Section: System
+Section: Development
 Tag: role::developer
