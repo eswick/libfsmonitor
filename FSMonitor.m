@@ -20,32 +20,34 @@
 @implementation FSMonitor
 
 - (id)init{
+    
 	if(![super init])
 		return nil;
-    
-	CPDistributedMessagingCenter *notificationCenter = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
-    rocketbootstrap_distributedmessagingcenter_apply(notificationCenter);
-	[notificationCenter runServerOnCurrentThread];
-    [notificationCenter registerForMessageName:@"FSMonitorInfoMessage" target:self selector:@selector(messageCallbackWithName:userInfo:)];
-    
+
+    CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
+    rocketbootstrap_distributedmessagingcenter_apply(c);
+    [c runServerOnCurrentThread];
+    [c registerForMessageName:@"FSMonitorInfoMessage" target:self selector:@selector(handleMessageNamed:withUserInfo:)];
+
 	self.typeFilter = FSMonitorEventTypeAll;
-    
+
 	self.directoryFilter = [NSMutableArray new];
-    
+
 	[self.directoryFilter release];
+    
 	return self;
 }
 
-- (void)messageCallbackWithName:(NSString *)name userInfo:(NSDictionary *)userInfo {
+-(void)handleMessageNamed:(NSString *)name withUserInfo:(NSDictionary *)userInfo {
     
 	if(![[self.delegate class] conformsToProtocol:@protocol(FSMonitorDelegate)])
 		return;
-    
+
 	NSDictionary *eventInfo = userInfo;
 	NSMutableDictionary *delegateEventInfo = [eventInfo mutableCopy];
-    
+
 	int type = [[delegateEventInfo objectForKey:@"TYPE"] intValue];
-    
+
 	if([self typeFilterAllowsEventType:type]){
 		[delegateEventInfo removeObjectForKey:@"FILE"];
 		if([NSURL URLWithString:[[eventInfo objectForKey:@"FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]])
@@ -54,10 +56,10 @@
 			NSLog(@"URL is nil. Path: %@ truncated?", [[eventInfo objectForKey:@"FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]);
 			return;
 		}
-        
+
 		if([delegateEventInfo objectForKey:@"DEST_FILE"]){
 			[delegateEventInfo removeObjectForKey:@"DEST_FILE"];
-            
+
 			if([NSURL URLWithString:[[eventInfo objectForKey:@"DEST_FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]])
 				[delegateEventInfo setObject:[NSURL URLWithString:[[eventInfo objectForKey:@"DEST_FILE"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"DEST_FILE"];
 			else{
@@ -65,16 +67,14 @@
 				return;
 			}
 		}
-        
+
 		[delegateEventInfo removeObjectForKey:@"TYPE"];
 		[delegateEventInfo setObject:@([self convertEventType:[[eventInfo objectForKey:@"TYPE"] intValue]]) forKey:@"TYPE"];
-        
+
 		if([self checkFilterWithEventInfo:delegateEventInfo])
-            [[self delegate] monitor:self recievedEventInfo:delegateEventInfo]; //NOT CALLED - else works
-        
-        
+			[[self delegate] monitor:self recievedEventInfo:delegateEventInfo];
 	}
-    
+
 	[delegateEventInfo release];
 }
 
@@ -83,7 +83,7 @@
 		if([[dictionary objectForKey:@"URL"] isEqual:url])
 			return;
 	}
-    
+
 	[self.directoryFilter addObject:[NSDictionary dictionaryWithObjectsAndKeys:url, @"URL", @(recursive), @"RECURSIVE", nil]];
 }
 
@@ -96,7 +96,7 @@
 
 - (BOOL)checkFilterWithEventInfo:(NSDictionary*)eventInfo{
 	BOOL directoryMatch = false;
-    
+
 	for(NSDictionary *dictionary in self.directoryFilter){
 		if([URL_STD([eventInfo objectForKey:@"FILE"]) isEqualToString:URL_STD([dictionary objectForKey:@"URL"])])//Directory itself
 			directoryMatch = true;
@@ -107,7 +107,7 @@
 				directoryMatch = true;
 		}
 	}
-    
+
 	return directoryMatch;
 }
 
