@@ -8,13 +8,14 @@
 #include <sys/sysctl.h>
 #include <pwd.h>
 #include <grp.h>
+#import <objc/runtime.h>
 #import <rocketbootstrap.h>
 #import "fsevents.h"
 #import "../CPDistributedMessagingCenter.h"
 
 #define DEV_FSEVENTS     "/dev/fsevents" // the fsevents pseudo-device
 #define FSEVENT_BUFSIZ   131072          // buffer for reading from the device
-#define EVENT_QUEUE_SIZE 4096            // limited by MAX_KFS_EVENTS
+#define EVENT_QUEUE_SIZE 4096            // limited by MAX_kfs_eventS
 
 void handleEvent(pid_t pid, int32_t type, NSArray *arguments);
 
@@ -48,6 +49,9 @@ typedef struct kfs_event {
 } kfs_event;
 
 int main(int argc, char **argv){
+    
+    NSLog(@"LIBFSMONITOR_D: INIT");
+    
 	int32_t arg_id;
 	int     fd, clonefd = -1;
 	int     i, eoff, off, ret;
@@ -70,11 +74,11 @@ int main(int argc, char **argv){
 		FSE_REPORT,  // FSE_XATTR_REMOVED,
 	};
 
-	notifier = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
+	notifier = [objc_getClass("CPDistributedMessagingCenter") centerNamed:@"com.eswick.libfsmonitor"];
 	rocketbootstrap_distributedmessagingcenter_apply(notifier);
 
 	if (geteuid() != 0) {
-		NSLog(@"Error: %s must be run as root.", argv[0]);
+		NSLog(@"FSMONITOR_D: Error: %s must be run as root.", argv[0]);
 		exit(1);
 	}
 
@@ -117,7 +121,7 @@ int main(int argc, char **argv){
 			off += sizeof(int32_t) + sizeof(pid_t); // type + pid
 
 			if (kfse->type == FSE_EVENTS_DROPPED) { // special event
-				NSLog(@"Process %d dropped events.", kfse->pid);
+				NSLog(@"FSMONITOR_D: Process %d dropped events.", kfse->pid);
 				off += sizeof(u_int16_t); // FSE_ARG_DONE: sizeof(type)
 				continue;
 			}
@@ -133,7 +137,7 @@ int main(int argc, char **argv){
 					//Contains dropped events
 				}
 			} else { // should never happen
-				NSLog(@"This may be a program bug (type = %d).", atype);
+				NSLog(@"FSMONITOR_D: This may be a program bug (type = %d).", atype);
 				exit(1);
 			}
 
@@ -198,8 +202,8 @@ int main(int argc, char **argv){
 						break;
 
 					default:
-						NSLog(@"such argument. so unknown. wow.");
-						NSLog(@"(Unknown event argument)");
+						//NSLog(@"such argument. so unknown. wow.");
+						//NSLog(@"(Unknown event argument)");
 						[arguments addObject:@"unknown"];
 						break;
 				}
@@ -224,12 +228,14 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments) {
 	[event setObject:@(type) forKey:@"TYPE"];
 	[event setObject:@(pid) forKey:@"PID"];
 	[event setObject:[arguments objectAtIndex:[arguments count] - 1] forKey:@"TIMESTAMP"];
+    
+    NSLog(@"LIBFSMONITOR_D: event: %@",event);
 
 	switch(type){
 		case FSE_XATTR_REMOVED:
 		case FSE_FINDER_INFO_CHANGED:
 		case FSE_EXCHANGE:
-			NSLog(@"Event type %i not implemented with arguments: %@", type, arguments);
+			NSLog(@"FSMONITOR_D: Event type %i not implemented with arguments: %@", type, arguments);
 			[event release];
 			return;
 		case FSE_RENAME:
@@ -245,8 +251,11 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments) {
 			break;
 	}
 
+    NSLog(@"LIBFSMONITOR_D: event_end: %@",event);
     NSDictionary *finalEvent = [[NSDictionary alloc] initWithDictionary:event];
+    NSLog(@"LIBFSMONITOR_D: finalEvent: %@",finalEvent);
 	[notifier sendMessageName:@"FSMonitorInfoMessage" userInfo:finalEvent];
+    NSLog(@"LIBFSMONITOR_D: sendMessage: FSMonitorInfoMessage");
 	[event release];
     [finalEvent release];
 }
