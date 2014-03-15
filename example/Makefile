@@ -1,10 +1,9 @@
 ARCHS = armv7 armv7s arm64
-
 include theos/makefiles/common.mk
 
-TWEAK_NAME = FSMonitorExample
-FSMonitorExample_FILES = Tweak.xm
-FSMonitorExample_LIBRARIES = fsmonitor
+TWEAK_NAME = FSMonitorTestCase
+FSMonitorTestCase_FILES = Tweak.xm
+FSMonitorTestCase_LIBRARIES = fsmonitor
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
