@@ -1,5 +1,6 @@
 #import <fsmonitor.h>
 #import <rocketbootstrap.h>
+#import <CoreFoundation/CoreFoundation.h>
 #import "CPDistributedMessagingCenter.h"
 
 #define FSE_INVALID             -1
@@ -19,10 +20,13 @@
 
 @implementation FSMonitor
 
-- (id)init{
+- (id)init {
     
-	if(![super init])
-		return nil;
+	self = [super init];
+	
+    if (self) {
+    
+    NSLog(@"LIBFSMONITOR: INIT");
 
     CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
     rocketbootstrap_distributedmessagingcenter_apply(c);
@@ -34,18 +38,25 @@
 	self.directoryFilter = [NSMutableArray new];
 
 	[self.directoryFilter release];
+        
+    }
     
 	return self;
 }
 
 -(void)handleMessageNamed:(NSString *)name withUserInfo:(NSDictionary *)userInfo {
     
-	if(![[self.delegate class] conformsToProtocol:@protocol(FSMonitorDelegate)])
-		return;
+    NSLog(@"LIBFSMONITOR: handleMessageName: %@ withUserInfo: %@",name,userInfo);
+    
+	if(![[self.delegate class] conformsToProtocol:@protocol(FSMonitorDelegate)]) {
+        NSLog(@"LIBFSMONITOR: does not conform to protocol");
+        return;
+    }
 
 	NSDictionary *eventInfo = userInfo;
+    NSLog(@"LIBFSMONITOR: eventInfo: %@",eventInfo);
 	NSMutableDictionary *delegateEventInfo = [eventInfo mutableCopy];
-
+    NSLog(@"LIBFSMONITOR: delegateEventInfo: %@",delegateEventInfo);
 	int type = [[delegateEventInfo objectForKey:@"TYPE"] intValue];
 
 	if([self typeFilterAllowsEventType:type]){
@@ -71,6 +82,9 @@
 		[delegateEventInfo removeObjectForKey:@"TYPE"];
 		[delegateEventInfo setObject:@([self convertEventType:[[eventInfo objectForKey:@"TYPE"] intValue]]) forKey:@"TYPE"];
 
+        NSLog(@"LIBFSMONITOR: eventInfo_End: %@",eventInfo);
+        NSLog(@"LIBFSMONITOR: delegateEventInfo_End: %@",delegateEventInfo);
+        
 		if([self checkFilterWithEventInfo:delegateEventInfo])
 			[[self delegate] monitor:self recievedEventInfo:delegateEventInfo];
 	}
@@ -149,7 +163,8 @@
 	}
 }
 
-- (void)dealloc{
+
+ - (void)dealloc{
 	[self.directoryFilter release];
 	[super dealloc];
 }
