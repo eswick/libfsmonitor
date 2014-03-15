@@ -2,7 +2,7 @@
 
 ##Overview##
 
-libfsmonitor is an Objective-C library allows processes to be notified upon various filesystem events, such as files being created, modified, or deleted. The daemon (fsmonitord) trails /dev/fsevents and parses the data into an NSDictionary, which is then sent via CPDistributedNotificationCenter to any interested clients. Included is a small wrapper around CPDistributedNotificationCenter which handles listening and directory filtering.
+libfsmonitor is an Objective-C library allows processes to be notified upon various filesystem events, such as files being created, modified, or deleted. The daemon (fsmonitord) trails /dev/fsevents and parses the data into an NSDictionary, which is then sent via CPDistributedMessagingCenter to any interested clients. Included is a small wrapper around CPDistributedMessagingCenter which handles listening and directory filtering.
 
 ## Usage ##
 Classes wishing to receive filesystem notification events must conform to the **FSMonitorDelegate** protocol.
@@ -12,7 +12,7 @@ Classes wishing to receive filesystem notification events must conform to the **
     FSMonitor *filesystemMonitor = [FSMonitor new];
     filesystemMonitor.delegate = self;
 
-    [filesystemMonitor addDirectoryFilter:[NSURL URLWithString:@"/path/to/monitor/"]];
+    [filesystemMonitor addDirectoryFilter:[NSURL URLWithString:@"/path/to/monitor/"] recursive:TRUE or FALSE];
 
 #### Delegate Method ####
     - (void)monitor:(FSMonitor*)monitor recievedEventInfo:(NSDictionary*)info{
