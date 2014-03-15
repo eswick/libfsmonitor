@@ -72,7 +72,7 @@ int main(int argc, char **argv){
 		FSE_REPORT,  // FSE_XATTR_REMOVED,
 	};
 
-	notifier = [objc_getClass("CPDistributedMessagingCenter") centerNamed:@"com.eswick.libfsmonitor"];
+	notifier = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
 	rocketbootstrap_distributedmessagingcenter_apply(notifier);
 
 	if (geteuid() != 0) {
