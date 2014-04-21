@@ -8,18 +8,17 @@
 #include <sys/sysctl.h>
 #include <pwd.h>
 #include <grp.h>
-#import <objc/runtime.h>
-#import <rocketbootstrap.h>
+#import "../NSDistributedNotificationCenter.h"
+
 #import "fsevents.h"
-#import "../CPDistributedMessagingCenter.h"
 
 #define DEV_FSEVENTS     "/dev/fsevents" // the fsevents pseudo-device
 #define FSEVENT_BUFSIZ   131072          // buffer for reading from the device
-#define EVENT_QUEUE_SIZE 4096            // limited by MAX_kfs_eventS
+#define EVENT_QUEUE_SIZE 4096            // limited by MAX_KFS_EVENTS
 
 void handleEvent(pid_t pid, int32_t type, NSArray *arguments);
 
-CPDistributedMessagingCenter *notifier;
+NSDistributedNotificationCenter *notifier;
 
 // an event argument
 typedef struct kfs_event_arg {
@@ -49,7 +48,6 @@ typedef struct kfs_event {
 } kfs_event;
 
 int main(int argc, char **argv){
-    
 	int32_t arg_id;
 	int     fd, clonefd = -1;
 	int     i, eoff, off, ret;
@@ -72,8 +70,7 @@ int main(int argc, char **argv){
 		FSE_REPORT,  // FSE_XATTR_REMOVED,
 	};
 
-	notifier = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
-	rocketbootstrap_distributedmessagingcenter_apply(notifier);
+	notifier = [NSDistributedNotificationCenter defaultCenter];
 
 	if (geteuid() != 0) {
 		NSLog(@"Error: %s must be run as root.", argv[0]);
@@ -220,7 +217,6 @@ int main(int argc, char **argv){
 
 
 void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
-    
 	NSMutableDictionary *event = [NSMutableDictionary new];
 
 	[event setObject:@(type) forKey:@"TYPE"];
@@ -246,8 +242,9 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 			[event setObject:[arguments objectAtIndex:5] forKey:@"GID"];
 			break;
 	}
-    
-	[notifier sendMessageName:@"FSMonitorInfoMessage" userInfo:event];
+
+	[notifier postNotificationName:@"FSMONITORD_CALLBACK" object:nil userInfo:event];
+
 	[event release];
 }
 

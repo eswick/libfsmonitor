@@ -1,7 +1,5 @@
 #import <fsmonitor.h>
-#import <rocketbootstrap.h>
-#import <CoreFoundation/CoreFoundation.h>
-#import "CPDistributedMessagingCenter.h"
+#import "NSDistributedNotificationCenter.h"
 
 #define FSE_INVALID             -1
 #define FSE_CREATE_FILE          0
@@ -20,35 +18,30 @@
 
 @implementation FSMonitor
 
-- (id)init {
-    
-	self = [super init];
-	
-    if (self) {
+- (id)init{
 
-    CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.eswick.libfsmonitor"];
-    rocketbootstrap_distributedmessagingcenter_apply(c);
-    [c runServerOnCurrentThread];
-    [c registerForMessageName:@"FSMonitorInfoMessage" target:self selector:@selector(handleMessageNamed:withUserInfo:)];
+	self = [super init];
+	if(!self)
+		return nil;
+
+	NSDistributedNotificationCenter* notificationCenter;
+	notificationCenter = [NSDistributedNotificationCenter defaultCenter];
+	[notificationCenter addObserver:self selector:@selector(daemonCallback:) name:@"FSMONITORD_CALLBACK" object:nil];
 
 	self.typeFilter = FSMonitorEventTypeAll;
-
 	self.directoryFilter = [NSMutableArray new];
-
 	[self.directoryFilter release];
-        
-    }
-    
+
 	return self;
 }
 
--(void)handleMessageNamed:(NSString *)name withUserInfo:(NSDictionary *)userInfo {
-    
+- (void)daemonCallback:(NSNotification *)notification {
 	if(![[self.delegate class] conformsToProtocol:@protocol(FSMonitorDelegate)])
-        return;
+		return;
 
-	NSDictionary *eventInfo = userInfo;
+	NSDictionary *eventInfo = [notification userInfo];
 	NSMutableDictionary *delegateEventInfo = [eventInfo mutableCopy];
+
 	int type = [[delegateEventInfo objectForKey:@"TYPE"] intValue];
 
 	if([self typeFilterAllowsEventType:type]){
@@ -73,7 +66,7 @@
 
 		[delegateEventInfo removeObjectForKey:@"TYPE"];
 		[delegateEventInfo setObject:@([self convertEventType:[[eventInfo objectForKey:@"TYPE"] intValue]]) forKey:@"TYPE"];
-        
+
 		if([self checkFilterWithEventInfo:delegateEventInfo])
 			[[self delegate] monitor:self recievedEventInfo:delegateEventInfo];
 	}
@@ -152,8 +145,7 @@
 	}
 }
 
-
- - (void)dealloc{
+- (void)dealloc{
 	[self.directoryFilter release];
 	[super dealloc];
 }

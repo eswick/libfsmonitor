@@ -1,9 +1,0 @@
-Package: com.yourcompany.FSMonitorExample
-Name: FSMonitorExample
-Depends: mobilesubstrate
-Version: 0.0.1
-Architecture: iphoneos-arm
-Description: libfsmonitor example
-Maintainer: YourName
-Author: YourName
-Section: Tweaks
