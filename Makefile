@@ -10,5 +10,4 @@ CFLAGS = -Ilayout/usr/include
 
 include $(THEOS_MAKE_PATH)/library.mk
 SUBPROJECTS += fsmonitord
-SUBPROJECTS += libfsexample
 include $(THEOS_MAKE_PATH)/aggregate.mk
