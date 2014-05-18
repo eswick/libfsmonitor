@@ -10,7 +10,7 @@
 #include <grp.h>
 
 #import "fsevents.h"
-#import "../CPDistributedNotificationCenter.h"
+#import "../NSDistributedNotificationCenter.h"
 
 #define DEV_FSEVENTS     "/dev/fsevents" // the fsevents pseudo-device
 #define FSEVENT_BUFSIZ   131072          // buffer for reading from the device
@@ -18,7 +18,7 @@
 
 void handleEvent(pid_t pid, int32_t type, NSArray *arguments);
 
-CPDistributedNotificationCenter *notifier;
+NSDistributedNotificationCenter *notifier;
 
 typedef struct kfs_event_arg {
 	u_int16_t  type;         // argument type
@@ -58,8 +58,7 @@ int main(int argc, char **argv){
 		FSE_REPORT,  // FSE_XATTR_REMOVED,
 	};
 
-	notifier = [CPDistributedNotificationCenter centerNamed:@"com.eswick.libfsmonitor"];
-	[notifier runServer];
+	notifier = [NSDistributedNotificationCenter defaultCenter];
 
 	if (geteuid() != 0) {
 		NSLog(@"Error: %s must be run as root.", argv[0]);
@@ -235,7 +234,7 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
 			break;
 	}
 
-	[notifier postNotificationName:@"FSMONITORD_CALLBACK" userInfo:event];
+	[notifier postNotificationName:@"FSMONITORD_CALLBACK" object:nil userInfo:event];
 
 	[event release];
 }

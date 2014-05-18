@@ -1,5 +1,5 @@
 #import <fsmonitor.h>
-#import "CPDistributedNotificationCenter.h"
+#import "NSDistributedNotificationCenter.h"
 
 #define FSE_INVALID             -1
 #define FSE_CREATE_FILE          0
@@ -22,12 +22,9 @@
 	if(![super init])
 		return nil;
 
-	CPDistributedNotificationCenter* notificationCenter;
-	notificationCenter = [CPDistributedNotificationCenter centerNamed:@"com.eswick.libfsmonitor"];
-	[notificationCenter startDeliveringNotificationsToMainThread];
-
-	NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-	[nc addObserver:self selector:@selector(daemonCallback:) name:@"FSMONITORD_CALLBACK" object:nil];
+	NSDistributedNotificationCenter* notificationCenter;
+	notificationCenter = [NSDistributedNotificationCenter defaultCenter];
+	[notificationCenter addObserver:self selector:@selector(daemonCallback:) name:@"FSMONITORD_CALLBACK" object:nil];
 
 	self.typeFilter = FSMonitorEventTypeAll;
 
