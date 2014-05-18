@@ -20,23 +20,11 @@ void handleEvent(pid_t pid, int32_t type, NSArray *arguments);
 
 CPDistributedNotificationCenter *notifier;
 
-// an event argument
 typedef struct kfs_event_arg {
 	u_int16_t  type;         // argument type
 	u_int16_t  len;          // size of argument data that follows this field
-	union {
-		struct vnode *vp;
-		char         *str;
-		void         *ptr;
-		int32_t       int32;
-		dev_t         dev;
-		ino_t         ino;
-		int32_t       mode;
-		uid_t         uid;
-		gid_t         gid;
-		time_t      timestamp;
-	} data;
 } kfs_event_arg_t;
+
 
 #define KFS_NUM_ARGS  FSE_MAX_ARGS
 
@@ -96,7 +84,6 @@ int main(int argc, char **argv){
 	}
 
 	close(fd);
-	//printf("fsevents device cloned (fd %d)\nfslogger ready\n", clonefd);
 
 	if ((ret = ioctl(clonefd, FSEVENTS_WANT_EXTENDED_INFO, NULL)) < 0) {
 		perror("ioctl");
@@ -155,19 +142,21 @@ int main(int argc, char **argv){
 
 				arg_id = (kea->type > FSE_MAX_ARGS) ? 0 : kea->type;
 
+				void *value_offset = (char *)kea + sizeof(kfs_event_arg_t);
+
 				switch (kea->type) { // handle based on argument type
 
 					case FSE_ARG_VNODE:  // a vnode (string) pointer
 						is_fse_arg_vnode = 1;
-						[arguments addObject:[NSString stringWithUTF8String:(char *)&(kea->data.vp)]];
+						[arguments addObject:[NSString stringWithUTF8String:(char*)value_offset]];
 						break;
 
 					case FSE_ARG_STRING: // a string pointer
-						[arguments addObject:[NSString stringWithUTF8String:(char *)&(kea->data.str)]];
+						[arguments addObject:[NSString stringWithUTF8String:(char*)value_offset]];
 						break;
 
 					case FSE_ARG_INT32:
-						[arguments addObject:@(kea->data.int32)];
+						[arguments addObject:@(*((uint32_t*)(value_offset)))];
 						break;
 
 					case FSE_ARG_RAW: // a void pointer
@@ -175,26 +164,27 @@ int main(int argc, char **argv){
 						break;
 
 					case FSE_ARG_INO: // an inode number
-						[arguments addObject:@((uint32_t)kea->data.ino)];
+						[arguments addObject:@(*((uint32_t*)(value_offset)))];
 						break;
 
 					case FSE_ARG_UID: // a user ID
-						[arguments addObject:@(kea->data.uid)];
+						[arguments addObject:@(*((uid_t*)(value_offset)))];
 						break;
 
 					case FSE_ARG_DEV: // a file system ID or a device number
-						[arguments addObject:@(kea->data.dev)];
+						[arguments addObject:@(*((dev_t*)(value_offset)))];
 						break;
 
 					case FSE_ARG_MODE: // a combination of file mode and file type
-						[arguments addObject:@(kea->data.mode)];
+						[arguments addObject:@(*((int32_t*)(value_offset)))];
 						break;
 
 					case FSE_ARG_GID: // a group ID
-						[arguments addObject:@(kea->data.gid)];
+						[arguments addObject:@(*((gid_t*)(value_offset)))];
 						break;
+
 					case FSE_ARG_INT64: // timestamp
-						[arguments addObject:@(kea->data.timestamp)];
+						[arguments addObject:@(*((time_t*)(value_offset)))];
 						break;
 
 					default:
@@ -218,6 +208,7 @@ int main(int argc, char **argv){
 
 
 void handleEvent(pid_t pid, int32_t type, NSArray *arguments){
+
 	NSMutableDictionary *event = [NSMutableDictionary new];
 
 	[event setObject:@(type) forKey:@"TYPE"];
